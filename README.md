@@ -11,6 +11,7 @@ A lightweight Python client for the Pi Network mainnet API. It provides easy acc
 - Async and sync clients
 - `latest_ledger_summary()` helper for quick summaries
 - CLI support for quick testing
+- Export utility for JSON/CSV/YAML bundles
 
 ## Installation
 
@@ -49,7 +50,21 @@ asyncio.run(main())
 python -m pi_ledger_api.cli --resource latest-summary
 python -m pi_ledger_api.cli --resource latest-summary --async
 python -m pi_ledger_api.cli --ledger-id 29023217 --resource transactions --limit 10
+python -m pi_ledger_api.cli --resource latest-summary --format markdown
+python -m pi_ledger_api.cli --resource latest-summary --format yaml
 ```
+
+## Export bundles
+
+```bash
+python export_ledger_bundle.py --ledger-id 29023217 --output-dir ./exports --formats json csv yaml
+```
+
+This writes:
+
+- `./exports/ledger_29023217.json`
+- `./exports/ledger_29023217.csv`
+- `./exports/ledger_29023217.yaml`
 
 ## API design
 
