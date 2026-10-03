@@ -5,6 +5,11 @@ import csv
 import io
 import json
 
+try:
+    import yaml
+except ImportError:  # pragma: no cover
+    yaml = None
+
 from pi_ledger_api import AsyncPiLedgerClient, PiLedgerClient
 
 
@@ -46,6 +51,15 @@ def _print_markdown(data: dict) -> None:
         print(f"| {key} | {value} |")
 
 
+def _print_yaml(data: dict) -> None:
+    if not isinstance(data, dict):
+        _print_json(data)
+        return
+    if yaml is None:
+        raise RuntimeError("PyYAML is not installed. Install with: pip install pyyaml")
+    print(yaml.safe_dump(data, sort_keys=False))
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Query Pi Network ledgers")
     parser.add_argument("--ledger-id", type=str, default="29023217", help="Ledger sequence or hash")
@@ -58,7 +72,7 @@ def main() -> None:
     parser.add_argument("--limit", type=int, default=10, help="Maximum items to fetch")
     parser.add_argument("--cursor", type=str, default=None, help="Optional pagination cursor")
     parser.add_argument("--order", choices=["asc", "desc"], default="desc", help="Response order")
-    parser.add_argument("--format", choices=["json", "table", "csv", "markdown"], default="json", help="Output layout")
+    parser.add_argument("--format", choices=["json", "table", "csv", "markdown", "yaml"], default="json", help="Output layout")
     parser.add_argument("--async", action="store_true", help="Use async client")
     args = parser.parse_args()
 
@@ -75,6 +89,8 @@ def main() -> None:
                         _print_csv(result)
                     elif args.format == "markdown":
                         _print_markdown(result)
+                    elif args.format == "yaml":
+                        _print_yaml(result)
                     else:
                         _print_json(result)
 
@@ -88,6 +104,8 @@ def main() -> None:
             _print_csv(result)
         elif args.format == "markdown":
             _print_markdown(result)
+        elif args.format == "yaml":
+            _print_yaml(result)
         else:
             _print_json(result)
         return
@@ -114,6 +132,8 @@ def main() -> None:
                     _print_csv(result)
                 elif args.format == "markdown" and isinstance(result, dict):
                     _print_markdown(result)
+                elif args.format == "yaml" and isinstance(result, dict):
+                    _print_yaml(result)
                 else:
                     _print_json(result)
 
@@ -139,6 +159,8 @@ def main() -> None:
         _print_csv(result)
     elif args.format == "markdown" and isinstance(result, dict):
         _print_markdown(result)
+    elif args.format == "yaml" and isinstance(result, dict):
+        _print_yaml(result)
     else:
         _print_json(result)
 
