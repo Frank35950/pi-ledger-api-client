@@ -35,6 +35,17 @@ def _print_csv(data: dict) -> None:
     print(buf.getvalue(), end="")
 
 
+def _print_markdown(data: dict) -> None:
+    if not isinstance(data, dict):
+        _print_json(data)
+        return
+
+    print("| Field | Value |")
+    print("| --- | --- |")
+    for key, value in data.items():
+        print(f"| {key} | {value} |")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Query Pi Network ledgers")
     parser.add_argument("--ledger-id", type=str, default="29023217", help="Ledger sequence or hash")
@@ -47,7 +58,7 @@ def main() -> None:
     parser.add_argument("--limit", type=int, default=10, help="Maximum items to fetch")
     parser.add_argument("--cursor", type=str, default=None, help="Optional pagination cursor")
     parser.add_argument("--order", choices=["asc", "desc"], default="desc", help="Response order")
-    parser.add_argument("--format", choices=["json", "table", "csv"], default="json", help="Output layout")
+    parser.add_argument("--format", choices=["json", "table", "csv", "markdown"], default="json", help="Output layout")
     parser.add_argument("--async", action="store_true", help="Use async client")
     args = parser.parse_args()
 
@@ -62,6 +73,8 @@ def main() -> None:
                         _print_table(result)
                     elif args.format == "csv":
                         _print_csv(result)
+                    elif args.format == "markdown":
+                        _print_markdown(result)
                     else:
                         _print_json(result)
 
@@ -73,6 +86,8 @@ def main() -> None:
             _print_table(result)
         elif args.format == "csv":
             _print_csv(result)
+        elif args.format == "markdown":
+            _print_markdown(result)
         else:
             _print_json(result)
         return
@@ -97,6 +112,8 @@ def main() -> None:
                     _print_table(result)
                 elif args.format == "csv" and isinstance(result, dict):
                     _print_csv(result)
+                elif args.format == "markdown" and isinstance(result, dict):
+                    _print_markdown(result)
                 else:
                     _print_json(result)
 
@@ -120,6 +137,8 @@ def main() -> None:
         _print_table(result)
     elif args.format == "csv" and isinstance(result, dict):
         _print_csv(result)
+    elif args.format == "markdown" and isinstance(result, dict):
+        _print_markdown(result)
     else:
         _print_json(result)
 
