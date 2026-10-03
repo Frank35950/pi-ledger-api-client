@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import argparse
+import csv
+import io
 import json
 
 from pi_ledger_api import AsyncPiLedgerClient, PiLedgerClient
@@ -20,6 +22,19 @@ def _print_table(data: dict) -> None:
         print(f"{str(key).ljust(key_width)}  {value}")
 
 
+def _print_csv(data: dict) -> None:
+    if not isinstance(data, dict):
+        _print_json(data)
+        return
+
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow(["field", "value"])
+    for key, value in data.items():
+        writer.writerow([key, value])
+    print(buf.getvalue(), end="")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Query Pi Network ledgers")
     parser.add_argument("--ledger-id", type=str, default="29023217", help="Ledger sequence or hash")
@@ -32,7 +47,7 @@ def main() -> None:
     parser.add_argument("--limit", type=int, default=10, help="Maximum items to fetch")
     parser.add_argument("--cursor", type=str, default=None, help="Optional pagination cursor")
     parser.add_argument("--order", choices=["asc", "desc"], default="desc", help="Response order")
-    parser.add_argument("--format", choices=["json", "table"], default="json", help="Output layout")
+    parser.add_argument("--format", choices=["json", "table", "csv"], default="json", help="Output layout")
     parser.add_argument("--async", action="store_true", help="Use async client")
     args = parser.parse_args()
 
@@ -45,6 +60,8 @@ def main() -> None:
                     result = await client.latest_ledger_summary()
                     if args.format == "table":
                         _print_table(result)
+                    elif args.format == "csv":
+                        _print_csv(result)
                     else:
                         _print_json(result)
 
@@ -54,6 +71,8 @@ def main() -> None:
         result = PiLedgerClient().latest_ledger_summary()
         if args.format == "table":
             _print_table(result)
+        elif args.format == "csv":
+            _print_csv(result)
         else:
             _print_json(result)
         return
@@ -76,6 +95,8 @@ def main() -> None:
 
                 if args.format == "table" and isinstance(result, dict):
                     _print_table(result)
+                elif args.format == "csv" and isinstance(result, dict):
+                    _print_csv(result)
                 else:
                     _print_json(result)
 
@@ -97,6 +118,8 @@ def main() -> None:
 
     if args.format == "table" and isinstance(result, dict):
         _print_table(result)
+    elif args.format == "csv" and isinstance(result, dict):
+        _print_csv(result)
     else:
         _print_json(result)
 
