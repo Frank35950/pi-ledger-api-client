@@ -1,0 +1,75 @@
+from __future__ import annotations
+
+from unittest.mock import Mock
+
+import pytest
+
+from pi_ledger_api import PiLedgerClient
+from pi_ledger_api.exceptions import PiLedgerNotFoundError, PiLedgerRateLimitError
+
+
+class DummyResponse:
+    def __init__(self, status_code, payload=None, text=""):
+        self.status_code = status_code
+        self._payload = payload
+        self.text = text
+
+    def raise_for_status(self):
+        if self.status_code >= 400:
+            raise Exception(f"HTTP {self.status_code}")
+
+    def json(self):
+        return self._payload
+
+
+def test_get_ledger_success(monkeypatch):
+    payload = {"sequence": 1, "hash": "abc123", "successful_transaction_count": 1}
+    session = Mock()
+    session.get.return_value = DummyResponse(200, payload)
+
+    client = PiLedgerClient(session=session)
+    result = client.get_ledger(1)
+
+    assert result == payload
+    session.get.assert_called_once_with("https://api.mainnet.minepi.com/ledgers/1", params=None, timeout=30)
+
+
+def test_get_ledger_404_raises(monkeypatch):
+    session = Mock()
+    session.get.return_value = DummyResponse(404, text="not found")
+
+    client = PiLedgerClient(session=session)
+
+    with pytest.raises(PiLedgerNotFoundError):
+        client.get_ledger(999)
+
+
+def test_rate_limit_retries_then_succeeds(monkeypatch):
+    session = Mock()
+    session.get.side_effect = [
+        DummyResponse(429, text="rate limited"),
+        DummyResponse(200, {"sequence": 2, "hash": "def456"}),
+    ]
+
+    client = PiLedgerClient(session=session, max_retries=2, backoff_factor=0)
+    result = client.get_ledger(2)
+
+    assert result["sequence"] == 2
+    assert session.get.call_count == 2
+
+
+def test_rate_limit_exhausted_raises(monkeypatch):
+    session = Mock()
+    session.get.return_value = DummyResponse(429, text="rate limited")
+
+    client = PiLedgerClient(session=session, max_retries=1, backoff_factor=0)
+
+    with pytest.raises(PiLedgerRateLimitError):
+        client.get_ledger(3)
+
+
+def test_invalid_limit_raises_value_error():
+    client = PiLedgerClient()
+
+    with pytest.raises(ValueError):
+        client.list_ledgers(limit=0)
