@@ -1,4 +1,5 @@
 from .client import PiLedgerClient
+from .async_client import AsyncPiLedgerClient
 from .exceptions import (
     PiLedgerAPIError,
     PiLedgerError,
@@ -9,6 +10,7 @@ from .exceptions import (
 
 __all__ = [
     "PiLedgerClient",
+    "AsyncPiLedgerClient",
     "PiLedgerError",
     "PiLedgerAPIError",
     "PiLedgerNotFoundError",
