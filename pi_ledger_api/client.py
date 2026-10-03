@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import time
 from typing import Any, Dict, Optional
 
 import requests
@@ -45,6 +44,8 @@ class PiLedgerClient:
 
     def _request(self, path: str, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         url = f"{self.base_url}/{path.lstrip('/')}"
+
+        import time
 
         for attempt in range(self.max_retries + 1):
             try:

@@ -8,15 +8,11 @@ A lightweight Python client for the Pi Network mainnet API. It provides easy acc
 - List ledgers with pagination
 - Fetch transactions, operations, payments, and effects for a ledger
 - Built-in retry and timeout handling
-- Simple CLI for quick testing
+- Async and sync clients
+- `latest_ledger_summary()` helper for quick summaries
+- CLI support for quick testing
 
 ## Installation
-
-```bash
-pip install .
-```
-
-Or for local development:
 
 ```bash
 pip install -e .
@@ -33,25 +29,26 @@ print(ledger["sequence"])
 print(ledger["hash"])
 ```
 
+## Async usage
+
+```python
+import asyncio
+from pi_ledger_api import AsyncPiLedgerClient
+
+async def main():
+    async with AsyncPiLedgerClient() as client:
+        summary = await client.latest_ledger_summary()
+        print(summary)
+
+asyncio.run(main())
+```
+
 ## CLI usage
 
 ```bash
-python -m pi_ledger_api.cli --ledger-id 29023217
+python -m pi_ledger_api.cli --resource latest-summary
+python -m pi_ledger_api.cli --resource latest-summary --async
 python -m pi_ledger_api.cli --ledger-id 29023217 --resource transactions --limit 10
-```
-
-## Example: fetch a ledger and print summary
-
-```python
-from pi_ledger_api import PiLedgerClient
-
-client = PiLedgerClient()
-ledger = client.get_ledger(29023217)
-print(
-    f"Ledger {ledger['sequence']} @ {ledger['closed_at']} "
-    f"| successful={ledger['successful_transaction_count']} "
-    f"failed={ledger['failed_transaction_count']}"
-)
 ```
 
 ## API design
@@ -64,9 +61,9 @@ The client exposes helpers for:
 - `get_operations(ledger_id, limit=100, cursor=None, order="desc")`
 - `get_payments(ledger_id, limit=100, cursor=None, order="desc")`
 - `get_effects(ledger_id, limit=100, cursor=None, order="desc")`
+- `latest_ledger_summary()`
 
 ## Notes
 
 - The Pi Network API uses the public mainnet URL: `https://api.mainnet.minepi.com`
-- Some responses include pagination fields such as `_links` and `embedded` depending on the endpoint.
 - The client does not modify chain state; it is a read-only client for ledger data.
