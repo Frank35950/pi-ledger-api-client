@@ -10,6 +10,16 @@ def _print_json(data: dict) -> None:
     print(json.dumps(data, indent=2, sort_keys=True))
 
 
+def _print_table(data: dict) -> None:
+    if not isinstance(data, dict):
+        _print_json(data)
+        return
+
+    key_width = max((len(str(key)) for key in data.keys()), default=0)
+    for key, value in data.items():
+        print(f"{str(key).ljust(key_width)}  {value}")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Query Pi Network ledgers")
     parser.add_argument("--ledger-id", type=str, default="29023217", help="Ledger sequence or hash")
@@ -22,7 +32,7 @@ def main() -> None:
     parser.add_argument("--limit", type=int, default=10, help="Maximum items to fetch")
     parser.add_argument("--cursor", type=str, default=None, help="Optional pagination cursor")
     parser.add_argument("--order", choices=["asc", "desc"], default="desc", help="Response order")
-    parser.add_argument("--pretty", action="store_true", help="Pretty-print JSON output")
+    parser.add_argument("--format", choices=["json", "table"], default="json", help="Output layout")
     parser.add_argument("--async", action="store_true", help="Use async client")
     args = parser.parse_args()
 
@@ -33,13 +43,19 @@ def main() -> None:
             async def _run():
                 async with AsyncPiLedgerClient() as client:
                     result = await client.latest_ledger_summary()
-                    _print_json(result)
+                    if args.format == "table":
+                        _print_table(result)
+                    else:
+                        _print_json(result)
 
             asyncio.run(_run())
             return
 
         result = PiLedgerClient().latest_ledger_summary()
-        _print_json(result)
+        if args.format == "table":
+            _print_table(result)
+        else:
+            _print_json(result)
         return
 
     if args.async:
@@ -57,7 +73,11 @@ def main() -> None:
                     result = await client.get_payments(args.ledger_id, limit=args.limit, cursor=args.cursor, order=args.order)
                 else:
                     result = await client.get_effects(args.ledger_id, limit=args.limit, cursor=args.cursor, order=args.order)
-                _print_json(result)
+
+                if args.format == "table" and isinstance(result, dict):
+                    _print_table(result)
+                else:
+                    _print_json(result)
 
         asyncio.run(_run())
         return
@@ -75,10 +95,10 @@ def main() -> None:
     else:
         result = client.get_effects(args.ledger_id, limit=args.limit, cursor=args.cursor, order=args.order)
 
-    if args.pretty:
-        _print_json(result)
+    if args.format == "table" and isinstance(result, dict):
+        _print_table(result)
     else:
-        print(json.dumps(result))
+        _print_json(result)
 
 
 if __name__ == "__main__":
