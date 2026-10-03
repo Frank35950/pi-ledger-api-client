@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import time
 
 from flask import Flask, render_template_string
 
@@ -28,24 +29,28 @@ def index():
     client = PiLedgerClient()
     ledger = client.get_ledger(29023217)
     summary = build_summary(ledger)
+    fetched_at = time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime())
 
     template = """
     <!doctype html>
     <html>
       <head>
         <title>Pi Ledger Summary</title>
+        <meta http-equiv="refresh" content="15">
         <style>
           body { font-family: Arial, sans-serif; margin: 40px; background: #f4f6f8; }
-          .card { max-width: 800px; margin: auto; background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+          .card { max-width: 900px; margin: auto; background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+          .meta { color: #666; margin-bottom: 20px; }
           table { width: 100%; border-collapse: collapse; }
           th, td { text-align: left; padding: 12px; border-bottom: 1px solid #eaeaea; }
-          th { width: 220px; }
+          th { width: 240px; }
           code { background: #f5f5f5; padding: 2px 6px; border-radius: 4px; }
         </style>
       </head>
       <body>
         <div class="card">
           <h1>Pi Ledger Summary</h1>
+          <div class="meta">Last refreshed: {{ fetched_at }}</div>
           <table>
             {% for key, value in summary.items() %}
             <tr>
@@ -58,7 +63,7 @@ def index():
       </body>
     </html>
     """
-    return render_template_string(template, summary=summary)
+    return render_template_string(template, summary=summary, fetched_at=fetched_at)
 
 
 if __name__ == "__main__":
